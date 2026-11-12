@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Late Comers</title>
+<style>
+:root{--ink:#f2f2f4;--muted:#8e8e96;--p:#ffffff;--glass:rgba(255,255,255,.07);--edge:rgba(255,255,255,.14);--line:rgba(255,255,255,.1);--tint:rgba(255,255,255,.09)}
+*{box-sizing:border-box}
+html{background:#000;color-scheme:dark}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,system-ui,sans-serif;line-height:1.5;background:linear-gradient(160deg,#050505 0%,#121214 55%,#1c1c20 100%);background-attachment:fixed;position:relative;overflow-x:hidden}
+body::before,body::after{content:"";position:fixed;z-index:-1;border-radius:50%;filter:blur(80px);pointer-events:none}
+body::before{width:420px;height:420px;background:#4a4a52;opacity:.45;top:-120px;right:-80px}
+body::after{width:380px;height:380px;background:#2e2e34;opacity:.7;bottom:-120px;left:-100px}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 20px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:14px;margin-bottom:24px}
+h1{margin:0;font-size:2.1rem;font-weight:700;letter-spacing:-.04em;color:var(--p)}
+header .sub{color:var(--muted);font-size:.95rem}
+.clock{text-align:right}
+#time{font-size:2.8rem;font-weight:200;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+#date{color:var(--muted);font-size:.95rem;margin-top:2px}
+#status{display:inline-block;margin-top:8px;padding:4px 14px;border-radius:99px;font-size:.82rem;font-weight:600;backdrop-filter:blur(12px)}
+.s-ok{background:var(--tint);color:var(--p)}
+.s-late{background:var(--p);color:#000;box-shadow:0 6px 18px rgba(255,255,255,.15)}
+.glass,.stat,section{background:var(--glass);backdrop-filter:blur(26px) saturate(180%);-webkit-backdrop-filter:blur(26px) saturate(180%);border:1px solid var(--edge);border-radius:24px;box-shadow:0 10px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.12)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px}
+.stat{padding:16px 18px}
+.stat b{display:block;font-size:1.7rem;font-weight:600;letter-spacing:-.03em}
+.stat span{color:var(--muted);font-size:.85rem}
+.grid{display:grid;grid-template-columns:1fr 2fr;gap:20px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}#time{font-size:2.2rem}.clock{text-align:left}}
+section{padding:20px;margin-bottom:20px}
+h2{margin:0 0 12px;font-size:1.05rem;font-weight:600;letter-spacing:-.01em}
+label{display:block;font-size:.8rem;font-weight:500;color:var(--muted);margin:12px 0 5px}
+input,select{font:inherit;width:100%;padding:11px 14px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--ink);border-radius:14px}
+input::placeholder{color:#6b6b73}
+button{font:inherit;font-weight:600;cursor:pointer;border:0;border-radius:14px;padding:11px 20px;margin-top:12px;color:#000;background:linear-gradient(135deg,#f5f5f7,#bdbdc4);box-shadow:0 8px 20px rgba(255,255,255,.1);transition:transform .15s,box-shadow .15s}
+button:hover{transform:translateY(-1px)}button:active{transform:scale(.97)}
+button.ghost{background:var(--tint);color:var(--p);box-shadow:none;margin:0;padding:5px 12px;font-size:.78rem;border-radius:99px}
+button.danger{color:#b5b5bd;background:rgba(255,255,255,.05)}
+:focus-visible{outline:3px solid rgba(255,255,255,.55);outline-offset:2px}
+.row{display:flex;gap:8px}.row input{flex:1}.row button{margin-top:0}
+ul{list-style:none;margin:12px 0 0;padding:0;max-height:220px;overflow:auto}
+li{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+li:last-child{border:0}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:11px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:500;font-size:.8rem}
+tr:last-child td{border:0}
+.tag{padding:3px 11px;border-radius:99px;font-size:.78rem;font-weight:600}
+.unpaid{background:var(--p);color:#000}.paid{background:var(--tint);color:var(--p)}
+.empty{color:var(--muted);padding:10px 0}
+.settings{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:500px){.settings{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){button{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div><h1>Late Comers</h1><div class="sub">Student late arrival and fine tracker</div></div>
+  <div class="clock"><div id="time">--:--:--</div><div id="date"></div><span id="status"></span></div>
+</header>
+
+<div class="stats">
+  <div class="stat"><b id="stToday">0</b><span>Late today</span></div>
+  <div class="stat"><b id="stTotal">0</b><span>Total late records</span></div>
+  <div class="stat"><b id="stUnpaid">0 PKR</b><span>Unpaid fines</span></div>
+  <div class="stat"><b id="stPaid">0 PKR</b><span>Fines collected</span></div>
+</div>
+
+<div class="grid">
+  <div>
+    <section>
+      <h2>Student names</h2>
+      <div class="row"><input id="newName" placeholder="Enter student name" aria-label="Student name"><button id="addBtn">Add</button></div>
+      <ul id="students"></ul>
+    </section>
+    <section>
+      <h2>Mark arrival</h2>
+      <label for="pick">Student</label>
+      <select id="pick"></select>
+      <button id="arriveBtn">Record arrival now</button>
+      <p id="msg" style="margin:12px 0 0;font-size:.9rem;color:var(--muted)"></p>
+    </section>
+    <section>
+      <h2>Manual entry</h2>
+      <label for="mName">Student name</label>
+      <input id="mName" list="mList" placeholder="Type or choose a name" autocomplete="off">
+      <datalist id="mList"></datalist>
+      <div class="settings" style="grid-template-columns:1fr 1fr">
+        <div><label for="mDate">Date</label><input id="mDate" type="date"></div>
+        <div><label for="mTime">Arrival time</label><input id="mTime" type="time"></div>
+      </div>
+      <button id="manualBtn">Add record</button>
+      <p id="mMsg" style="margin:12px 0 0;font-size:.9rem;color:var(--muted)"></p>
+    </section>
+  </div>
+
+  <div>
+    <section>
+      <h2>Late students</h2>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Name</th><th>Date</th><th>Arrived</th><th>Fine</th><th>Due date</th><th>Status</th><th></th></tr></thead>
+          <tbody id="records"></tbody>
+        </table>
+      </div>
+      <div id="none" class="empty">No late students yet.</div>
+    </section>
+    <section>
+      <h2>Settings</h2>
+      <div class="settings">
+        <div><label for="cut">Late after</label><input id="cut" type="time"></div>
+        <div><label for="fine">Fine (PKR)</label><input id="fine" type="number" min="0"></div>
+        <div><label for="days">Days to pay</label><input id="days" type="number" min="0"></div>
+      </div>
+      <button class="ghost danger" id="clearBtn" style="margin-top:16px">Clear all late records</button>
+    </section>
+  </div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const KEY="lateComersData";
+let db={students:[],records:[],cut:"15:30",fine:50,days:7};
+try{const s=JSON.parse(localStorage.getItem(KEY));if(s)db={...db,...s}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}};
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const nice=s=>new Date(s+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
+const t12=t=>{const[h,m]=t.split(":").map(Number);return `${h%12||12}:${pad(m)} ${h<12?"AM":"PM"}`};
+const mins=t=>{const[h,m]=t.split(":").map(Number);return h*60+m};
+function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML}
+
+function tick(){
+  const n=new Date();
+  $("time").textContent=n.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  $("date").textContent=n.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  const late=n.getHours()*60+n.getMinutes()>mins(db.cut);
+  const st=$("status");
+  st.textContent=late?`Late period (after ${t12(db.cut)}): ${db.fine} PKR fine`:`On time until ${t12(db.cut)}`;
+  st.className=late?"s-late":"s-ok";
+}
+
+function render(){
+  $("cut").value=db.cut;$("fine").value=db.fine;$("days").value=db.days;
+  $("students").innerHTML=db.students.length?db.students.map((s,i)=>`<li>${esc(s)}<button class="ghost danger" data-del="${i}">Remove</button></li>`).join(""):'<li class="empty">Add your first student above.</li>';
+  $("mList").innerHTML=db.students.map(s=>`<option value="${esc(s)}">`).join("");
+  $("pick").innerHTML=db.students.length?db.students.map(s=>`<option>${esc(s)}</option>`).join(""):'<option value="">No students added</option>';
+  const rows=[...db.records].reverse();
+  $("records").innerHTML=rows.map(r=>{const i=db.records.indexOf(r);
+    return `<tr><td><b>${esc(r.name)}</b></td><td>${nice(r.date)}</td><td>${t12(r.time)}</td><td>${r.fine} PKR</td><td>${nice(r.due)}</td><td><span class="tag ${r.paid?"paid":"unpaid"}">${r.paid?"Paid":"Unpaid"}</span></td><td><button class="ghost" data-pay="${i}">${r.paid?"Undo":"Mark paid"}</button> <button class="ghost danger" data-rm="${i}">Delete</button></td></tr>`}).join("");
+  $("none").style.display=rows.length?"none":"block";
+  const today=ymd(new Date());
+  $("stToday").textContent=db.records.filter(r=>r.date===today).length;
+  $("stTotal").textContent=db.records.length;
+  $("stUnpaid").textContent=db.records.filter(r=>!r.paid).reduce((a,r)=>a+r.fine,0)+" PKR";
+  $("stPaid").textContent=db.records.filter(r=>r.paid).reduce((a,r)=>a+r.fine,0)+" PKR";
+  tick();
+}
+
+function addStudent(){
+  const v=$("newName").value.trim();
+  if(!v)return;
+  if(db.students.some(s=>s.toLowerCase()===v.toLowerCase())){$("newName").select();return}
+  db.students.push(v);db.students.sort((a,b)=>a.localeCompare(b));
+  $("newName").value="";save();render();
+}
+$("addBtn").onclick=addStudent;
+$("newName").onkeydown=e=>{if(e.key==="Enter")addStudent()};
+
+function addRecord(name,date,time){
+  if(mins(time)<=mins(db.cut))return false;
+  const due=new Date(date+"T00:00:00");due.setDate(due.getDate()+Number(db.days));
+  db.records.push({name,date,time,fine:Number(db.fine),due:ymd(due),paid:false});
+  return true;
+}
+$("arriveBtn").onclick=()=>{
+  const name=$("pick").value,m=$("msg");
+  if(!name){m.textContent="Add a student name first.";return}
+  const n=new Date(),time=`${pad(n.getHours())}:${pad(n.getMinutes())}`;
+  if(!addRecord(name,ymd(n),time)){m.textContent=`${name} arrived on time at ${t12(time)}. No fine.`;return}
+  save();render();
+  $("msg").textContent=`${name} is late (${t12(time)}). Fine: ${db.fine} PKR.`;
+};
+function setManualDefaults(){
+  const n=new Date();
+  $("mDate").value=ymd(n);$("mTime").value=`${pad(n.getHours())}:${pad(n.getMinutes())}`;
+}
+$("manualBtn").onclick=()=>{
+  const name=$("mName").value.trim(),date=$("mDate").value,time=$("mTime").value,m=$("mMsg");
+  if(!name||!date||!time){m.textContent="Enter a name, date and time.";return}
+  if(!db.students.some(x=>x.toLowerCase()===name.toLowerCase())){db.students.push(name);db.students.sort((a,b)=>a.localeCompare(b))}
+  const ok=addRecord(name,date,time);
+  save();render();
+  $("mName").value="";setManualDefaults();
+  $("mMsg").textContent=ok?`${name} added as late (${t12(time)}). Fine: ${db.fine} PKR.`:`${name} at ${t12(time)} is on time (before ${t12(db.cut)}). No fine, nothing saved.`;
+};
+
+document.addEventListener("click",e=>{
+  const d=e.target.dataset;
+  if(d.del!==undefined){db.students.splice(+d.del,1)}
+  else if(d.pay!==undefined){db.records[+d.pay].paid=!db.records[+d.pay].paid}
+  else if(d.rm!==undefined){db.records.splice(+d.rm,1)}
+  else return;
+  save();render();
+});
+
+["cut","fine","days"].forEach(id=>$(id).onchange=()=>{
+  if(!$(id).value)return;
+  db[id]=id==="cut"?$(id).value:Number($(id).value);save();render();
+});
+$("clearBtn").onclick=()=>{if(confirm("Delete all late records?")){db.records=[];save();render()}};
+
+setManualDefaults();render();setInterval(tick,1000);
+</script>
+</body>
+</html>
